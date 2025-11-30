@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuis Matematika Kelas 1</title>
+<style>
+body { font-family: 'Comic Sans MS', Arial, sans-serif; background: #fffbf0; padding: 20px; }
+h1 { text-align: center; color: #e67e22; }
+#timer { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color:#27ae60; }
+#progress-container { width: 100%; background: #ddd; border-radius: 10px; margin-bottom: 20px; height: 20px; }
+#progress-bar { width: 0%; height: 100%; background: #3498db; border-radius: 10px; transition: width 0.3s; }
+.soal { margin-bottom: 20px; background: #fff9e5; padding: 15px; border-radius: 12px; box-shadow: 0 0 8px rgba(0,0,0,0.2); }
+.jawaban label { display: block; margin: 5px 0; cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid transparent; transition: 0.2s; font-size: 16px; }
+.jawaban input[type=radio] { margin-right: 10px; }
+.jawaban label:hover { background-color: #f5f6fa; }
+.correct { background-color: #d4edda !important; color: #155724; border-color: #28a745 !important; }
+.wrong { background-color: #f8d7da !important; color: #721c24; border-color: #dc3545 !important; }
+.result { font-size: 28px; text-align: center; margin-top: 20px; font-weight: bold; color: #c0392b; }
+.feedback { font-size: 50px; text-align: center; margin-top: 10px; }
+button { display: block; margin: 20px auto; padding: 12px 25px; font-size: 18px; background: #e67e22; color: white; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px #d35400; }
+button:active { box-shadow: 0 2px #d35400; transform: translateY(2px); }
+</style>
+</head>
+<body>
+
+<h1>Kuis Matematika Kelas 1</h1>
+<div id="timer">25:00</div>
+<div id="progress-container"><div id="progress-bar"></div></div>
+
+<form id="kuisForm"></form>
+
+<div class="result" id="result"></div>
+<div class="feedback" id="feedback"></div>
+<button id="selesaiBtn">Selesai</button>
+
+<script>
+const soalData = [
+{soal:"Hitung bintang: ⭐⭐⭐⭐", pilihan:["3","4","5","6"], jawaban:"4"},
+{soal:"Tulis angka dari apel: 🍎🍎🍎", pilihan:["2","3","4","5"], jawaban:"3"},
+{soal:"Bandingkan jumlah: 🍎🍎🍎 dan 🍌🍌", pilihan:[">","<","=","Tidak tahu"], jawaban:">"},
+{soal:"Hitung maju 1,2,3,...", pilihan:["4,5","3,4","5,6","2,3"], jawaban:"4,5"},
+{soal:"Hitung mundur 5,4,...", pilihan:["3,2,1","4,3,2","2,1,0","1,2,3"], jawaban:"3,2,1"},
+{soal:"Pasangkan angka & mobil: 3 🚗🚗🚗", pilihan:["Benar","Salah"], jawaban:"Benar"},
+{soal:"Ani punya 3 apel, diberi 2 lagi. Total?", pilihan:["4","5","6","3"], jawaban:"5"},
+{soal:"Budi punya 5 permen, makan 2. Sisa?", pilihan:["3","2","5","1"], jawaban:"3"},
+{soal:"Benda mana lingkaran? 🔵 ◼️", pilihan:["Lingkaran","Kotak","Segitiga","Tidak ada"], jawaban:"Lingkaran"},
+{soal:"Berapa merah? 🔴🔴🔴🟢🟢", pilihan:["2","3","4","1"], jawaban:"3"},
+{soal:"Susun bangun: 🔺🔺⬛ = ?", pilihan:["2","3","1","4"], jawaban:"3"},
+{soal:"Urai persegi: ⬛⬛⬛⬛", pilihan:["2","4","3","1"], jawaban:"4"},
+{soal:"Bandingkan panjang: Pensil 7cm, Penghapus 3cm", pilihan:["Pensil","Penghapus","Sama","Tidak tahu"], jawaban:"Pensil"},
+{soal:"Urutkan pendek → panjang: 🟥🟦🟩", pilihan:["🟥,🟦,🟩","🟩,🟦,🟥","🟦,🟥,🟩","Sama semua"], jawaban:"🟥,🟦,🟩"},
+{soal:"Nilai tempat puluhan & satuan: 13 apel 🍎🍎... (13)", pilihan:["10,3","1,3","10,0","0,3"], jawaban:"10,3"},
+{soal:"Hitung maju+mundur: 2,3,4,...6,5,4. Angka terakhir?", pilihan:["5","4","6","3"], jawaban:"4"},
+{soal:"Pasangkan hewan: 🐶🐶 🐱🐱🐱. Anjing?", pilihan:["1","2","3","0"], jawaban:"2"},
+{soal:"Rina punya 4 balon 🎈🎈🎈🎈, diberi 3 lagi 🎈🎈🎈. Total?", pilihan:["6","7","8","9"], jawaban:"7"},
+{soal:"Tom punya 6 kue 🍪🍪🍪🍪🍪🍪, makan 4. Sisa?", pilihan:["1","2","3","4"], jawaban:"2"},
+{soal:"Banyak segitiga: 🔺🔺 ⬛⬛⬛ 🔵🔵🔵🔵", pilihan:["2","3","4","5"], jawaban:"2"}
+];
+
+let jawabanUser = JSON.parse(localStorage.getItem("jawabanUser1")) || {};
+const form = document.getElementById("kuisForm");
+const progressBar = document.getElementById("progress-bar");
+
+function renderSoal(){
+  form.innerHTML = "";
+  soalData.forEach((s,index)=>{
+    const div = document.createElement("div");
+    div.className = "soal";
+    div.innerHTML = `<strong>${index+1}. ${s.soal}</strong><div class="jawaban"></div>`;
+    const jawabanDiv = div.querySelector(".jawaban");
+    s.pilihan.forEach(pil=>{
+      const checked = jawabanUser[index] === pil ? "checked" : "";
+      const id = `soal${index}_${pil}`;
+      jawabanDiv.innerHTML += `<label for="${id}"><input type="radio" name="soal${index}" id="${id}" value="${pil}" ${checked}> ${pil}</label>`;
+    });
+    form.appendChild(div);
+  });
+
+  form.querySelectorAll("input[type=radio]").forEach(input=>{
+    input.addEventListener("change",(e)=>{
+      const idx = parseInt(e.target.name.replace("soal",""));
+      jawabanUser[idx] = e.target.value;
+      localStorage.setItem("jawabanUser1",JSON.stringify(jawabanUser));
+      updateProgress();
+    });
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  let answered = Object.keys(jawabanUser).length;
+  let percent = (answered/soalData.length)*100;
+  progressBar.style.width = percent+"%";
+}
+
+renderSoal();
+
+// Timer 25 menit
+let timeLeft = 25*60;
+const timerEl = document.getElementById("timer");
+const timer = setInterval(()=>{
+  let minutes = Math.floor(timeLeft/60);
+  let seconds = timeLeft%60;
+  timerEl.textContent = `${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2,"0")}`;
+  if(timeLeft<=0){ clearInterval(timer); selesai(); }
+  timeLeft--;
+},1000);
+
+document.getElementById("selesaiBtn").addEventListener("click",selesai);
+
+function selesai(){
+  clearInterval(timer);
+  let score = 0;
+  soalData.forEach((s,index)=>{
+    const div = form.children[index];
+    const pilihanEls = div.querySelectorAll("input");
+    pilihanEls.forEach(input=>{
+      input.disabled = true;
+      const label = input.parentElement;
+      if(input.value === s.jawaban){
+        label.classList.add("correct");
+        label.innerHTML += " ✔";
+      }
+      if(jawabanUser[index] && jawabanUser[index] !== s.jawaban && input.checked){
+        label.classList.add("wrong");
+        label.innerHTML += " ✖";
+      }
+    });
+    if(jawabanUser[index] === s.jawaban) score++;
+  });
+
+  const nilai = Math.round((score/soalData.length)*100);
+  document.getElementById("result").innerText = `Nilai kamu: ${nilai}/100`;
+  const feedback = document.getElementById("feedback");
+  feedback.innerHTML = nilai >=75 ? "🎉 Hebat! Kamu pintar! ⭐" : "😢 Wah, nilai kurang. Coba lagi ya!";
+}
+</script>
+</body>
+</html>
